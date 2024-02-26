@@ -6,7 +6,7 @@
 \usage{
 load_tweets_json_line(
   file_path,
-  num_threads = 10,
+  num_threads = NULL,
   n_max = Inf,
   skip_empty_rows = TRUE,
   query = "/data",
@@ -22,7 +22,7 @@ load_tweets_json_line(
 \arguments{
 \item{file_path}{A character string specifying the path to the .json or .jsonl file.}
 
-\item{num_threads}{An integer specifying the number of threads to be used for parsing. Default is 10.}
+\item{num_threads}{An integer specifying the number of threads to be used for parsing. Default is NULL.}
 
 \item{n_max}{An integer specifying the maximum number of lines to read from the file. Default is Inf.}
 

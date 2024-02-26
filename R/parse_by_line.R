@@ -3,7 +3,7 @@
 #' This function parses and reshapes .json and .jsonl data from the Twitter v1 and v2 APIs into a format that can be processed by the CooRTweet package.
 #'
 #' @param file_path A character string specifying the path to the .json or .jsonl file.
-#' @param num_threads An integer specifying the number of threads to be used for parsing. Default is 10.
+#' @param num_threads An integer specifying the number of threads to be used for parsing. Default is NULL.
 #' @param n_max An integer specifying the maximum number of lines to read from the file. Default is Inf.
 #' @param skip_empty_rows A logical value indicating whether empty rows should be skipped. Default is TRUE.
 #' @param query A character string specifying the JSON path to extract data from. Default is "/data".
@@ -31,7 +31,7 @@
 #' @export
 load_tweets_json_line <- function(
     file_path,
-    num_threads = 10,
+    num_threads = NULL,
     n_max = Inf,
     skip_empty_rows = TRUE,
     query = "/data",
