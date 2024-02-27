@@ -127,6 +127,65 @@ extract_URL_dt <- function(entities){
 
 
 
+#' Extract Mentions Data.Table from Entities Data.Table
+#'
+#' This function extracts mentions from tweets' entities data.table and organizes them into a separate data.table.
+#'
+#' @param entities A data.table containing entities information extracted from Twitter data, typically obtained using the extract_entities_dt function.
+#' @return A data.table containing mentions extracted from the tweets, along with related information such as tweet_id, row_id, username, id, start, and end.
+#' @details This function evaluates if there are tweets with several mentions, resulting in a mentions.id column. It then subsets the data into tweets containing one mention and tweets with several mentions. Column names starting with "mentions" are harmonized, and the prefix "mentions." is removed. Empty observations are dropped, and the resulting data.table is indexed by tweet_id, username, and id for efficient querying.
+#'
+#' @import data.table
+#'
+#' @export
+extract_mentions_dt <- function(entities) {
+  # Define mention columns
+  mentions_cols <- c("tweet_id",
+                     "row_id",
+                     "username",
+                     "id",
+                     "start",
+                     "end")
+
+  # Evaluate if there are tweets with several mentions, resulting in a mentions.id column
+  if ("mentions.id" %in% colnames(entities)) {
+    multi_mentions_cols <- c(
+      "tweet_id",
+      "row_id",
+      "mentions.username",
+      "mentions.id",
+      "mentions.start",
+      "mentions.end"
+    )
+
+    # Subset into tweets containing one mention and tweets with several mentions
+    one_mentions <- entities[, mentions_cols, with = FALSE]
+    multi_mentions <- entities[, multi_mentions_cols, with = FALSE]
+
+    # Harmonize the column names
+    # Get column names starting with "mentions"
+    m_mentions_cols <- grep("^mentions\\.", names(multi_mentions), value = TRUE)
+
+    # Remove the prefix "mentions."
+    new_names <- gsub("^mentions\\.", "", m_mentions_cols)
+
+    # Rename the columns
+    data.table::setnames(multi_mentions, m_mentions_cols, new_names)
+
+    # Bind the two data.tables
+    Mentions <- data.table::rbindlist(list(one_mentions, multi_mentions))
+  } else {
+    Mentions <- entities[, mentions_cols, with = FALSE]
+  }
+
+  # Drop empty observations
+  Mentions <- Mentions[purrr::map_lgl(Mentions$username, ~!is.na(.x))]
+
+  # Set index for efficient querying
+  data.table::setindex(Mentions, tweet_id, username, id)
+
+  return(Mentions)
+}
 
 
 

@@ -9,5 +9,7 @@ utils::globalVariables(c(".",
                          'unwound_url',
                          'domain',
                          ":=",
-                         "entities"
+                         "entities",
+                         "username",
+                         "id"
                          ))
