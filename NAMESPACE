@@ -2,7 +2,9 @@
 
 export(extract_URL_dt)
 export(extract_entities_dt)
+export(extract_hashtags_dt)
 export(extract_mentions_dt)
 export(load_tweets_json_line)
 export(load_users_json_line)
+export(preprocess_line_tweets)
 import(data.table)

@@ -11,5 +11,7 @@ utils::globalVariables(c(".",
                          ":=",
                          "entities",
                          "username",
-                         "id"
+                         "id",
+                         "tag",
+                         "public_metrics"
                          ))
