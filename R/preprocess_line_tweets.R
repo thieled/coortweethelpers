@@ -1,29 +1,27 @@
-
-#' Extract URL Data.Table from Twitter Data
+#' Extract Entities Data.Table from Twitter Data
 #'
-#' This function extracts URL information from Twitter data and organizes it into a data.table format.
+#' This function extracts entities information from Twitter data and organizes it into a data.table in wide format.
 #'
 #' @param tweets A data.table containing Twitter data, including tweet_id and entities columns.
-#' @return A data.table containing URL information extracted from Twitter data.
-#' @details This function drops empty rows, subsets the data.table to tweet_id and entities columns, unnests the entities column into a longer format, and pivots the data into wide format. If multiple URLs are present in a tweet, it separates them into individual rows and harmonizes the column names. It also drops empty observations and creates a new column "clear_url" based on the condition provided. Additionally, it extracts domain names from the expanded_url column.
+#' @return A data.table containing entities information extracted from Twitter data in wide format.
+#' @details This function drops empty rows, subsets the data.table to tweet_id and entities columns, unnests the entities column into a longer format, and pivots the data into wide format. It creates a unique row identifier for each tweet_id - entities_id pair to ensure uniqueness in the resulting data.table.
 #'
 #' @import data.table
 #'
+#'
 #' @export
-extract_URL_dt <- function(tweets){
-
-
+extract_entities_dt <- function(tweets) {
   ## For some reason, CooRTweet:::unnest_wider does not work properly here - different solution
   # Note: There is probably a more efficient way to achieve this
 
-  # Drop empty rows, subset data.table to tweet_id and entites column
+  # Drop empty rows, subset data.table to tweet_id and entities column
   entities <- tweets[purrr::map_lgl(tweets$entities, ~!is.null(.x)), .(tweet_id, entities)]
 
   # make entities column a vector
   entities[, entities := purrr::map(dt_filtered[, entities], ~ unlist(.x))]
 
   # unnest into longer format
-  entities <- tidytable::unnest_longer(entities, entities, names_repair = "minimal", )
+  entities <- tidytable::unnest_longer(entities, entities, names_repair = "minimal")
 
   # Turn into data.table
   data.table::setDT(entities)
@@ -34,7 +32,29 @@ extract_URL_dt <- function(tweets){
   # Pivot the data to wide format
   entities <- data.table::dcast(entities, tweet_id + row_id ~ entities_id, value.var = "entities")
 
-  # Subset
+  return(entities)
+}
+
+
+
+
+
+
+
+#' Extract URLs Data.Table from Entities Data.Table
+#'
+#' This function extracts URLs shared in tweets from the entities data.table and organizes them into a separate data.table.
+#'
+#' @param entities A data.table containing entities information extracted from Twitter data, typically obtained using the extract_entities_dt function.
+#' @return A data.table containing URLs shared in the tweets, along with related information such as tweet_id, row_id, URL details, and domain names.
+#' @details This function evaluates if there are tweets with several URLs, resulting in a urls.url column. It then subsets the data into tweets containing one URL and tweets with several URLs. Column names starting with "url." are harmonized, and the prefix "urls." is removed. Empty observations are dropped, and a new column clear_url is created using data.table syntax. Domain names are extracted from the expanded_url column and stored in the domain column. The resulting data.table is indexed by tweet_id, domain, and expanded_url for efficient querying.
+#'
+#' @import data.table
+#'
+#' @export
+extract_URL_dt <- function(entities){
+
+  # Define url columns
   url_cols <- c(
     "tweet_id",
     "row_id",
@@ -81,7 +101,9 @@ extract_URL_dt <- function(tweets){
     # Bind the two data.tables
     URLs <- data.table::rbindlist(list(oneurl, multiurl))
   }else{
+
     URLs <- entities[, oneurl_cols, with = FALSE]
+
   }
 
   # Drop empty observations

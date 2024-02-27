@@ -2,19 +2,19 @@
 % Please edit documentation in R/preprocess_line_tweets.R
 \name{extract_URL_dt}
 \alias{extract_URL_dt}
-\title{Extract URL Data.Table from Twitter Data}
+\title{Extract URLs Data.Table from Entities Data.Table}
 \usage{
-extract_URL_dt(tweets)
+extract_URL_dt(entities)
 }
 \arguments{
-\item{tweets}{A data.table containing Twitter data, including tweet_id and entities columns.}
+\item{entities}{A data.table containing entities information extracted from Twitter data, typically obtained using the extract_entities_dt function.}
 }
 \value{
-A data.table containing URL information extracted from Twitter data.
+A data.table containing URLs shared in the tweets, along with related information such as tweet_id, row_id, URL details, and domain names.
 }
 \description{
-This function extracts URL information from Twitter data and organizes it into a data.table format.
+This function extracts URLs shared in tweets from the entities data.table and organizes them into a separate data.table.
 }
 \details{
-This function drops empty rows, subsets the data.table to tweet_id and entities columns, unnests the entities column into a longer format, and pivots the data into wide format. If multiple URLs are present in a tweet, it separates them into individual rows and harmonizes the column names. It also drops empty observations and creates a new column "clear_url" based on the condition provided. Additionally, it extracts domain names from the expanded_url column.
+This function evaluates if there are tweets with several URLs, resulting in a urls.url column. It then subsets the data into tweets containing one URL and tweets with several URLs. Column names starting with "url." are harmonized, and the prefix "urls." is removed. Empty observations are dropped, and a new column clear_url is created using data.table syntax. Domain names are extracted from the expanded_url column and stored in the domain column. The resulting data.table is indexed by tweet_id, domain, and expanded_url for efficient querying.
 }
