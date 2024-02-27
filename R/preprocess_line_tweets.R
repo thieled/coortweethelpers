@@ -102,7 +102,7 @@ extract_URL_dt <- function(entities){
     URLs <- data.table::rbindlist(list(oneurl, multiurl))
   }else{
 
-    URLs <- entities[, oneurl_cols, with = FALSE]
+    URLs <- entities[, url_cols, with = FALSE]
 
   }
 
