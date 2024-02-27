@@ -1,0 +1,12 @@
+utils::globalVariables(c(".",
+                         "tweet_id",
+                         'dt_filtered',
+                         'row_id',
+                         '.N',
+                         'entities_id',
+                         'oneurl_cols',
+                         'expanded_url',
+                         'unwound_url',
+                         'domain',
+                         ":="
+                         ))

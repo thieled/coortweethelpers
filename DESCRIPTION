@@ -14,4 +14,6 @@ Imports:
     parallel,
     purrr,
     RcppSimdJson,
-    readr
+    readr,
+    stringi,
+    tidytable
