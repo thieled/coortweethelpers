@@ -15,24 +15,24 @@ extract_entities_dt <- function(tweets) {
   # Note: There is probably a more efficient way to achieve this
 
   # Drop empty rows, subset data.table to tweet_id and entities column
-  entities <- tweets[purrr::map_lgl(tweets$entities, ~!is.null(.x)), .(tweet_id, entities)]
+  ent_dt <- tweets[purrr::map_lgl(tweets$entities, ~!is.null(.x)), .(tweet_id, entities)]
 
   # make entities column a vector
-  entities[, entities := purrr::map(dt_filtered[, entities], ~ unlist(.x))]
+  ent_dt[, entities := purrr::map(ent_dt[, entities], ~ unlist(.x))]
 
   # unnest into longer format
-  entities <- tidytable::unnest_longer(entities, entities, names_repair = "minimal")
+  ent_dt <- tidytable::unnest_longer(ent_dt, entities, names_repair = "minimal")
 
   # Turn into data.table
-  data.table::setDT(entities)
+  data.table::setDT(ent_dt)
 
   # Create a unique row identifier for each tweet_id - entities_id pair
-  entities[, row_id := seq_len(.N), by = .(tweet_id, entities_id)]
+  ent_dt[, row_id := seq_len(.N), by = .(tweet_id, entities_id)]
 
   # Pivot the data to wide format
-  entities <- data.table::dcast(entities, tweet_id + row_id ~ entities_id, value.var = "entities")
+  ent_dt <- data.table::dcast(ent_dt, tweet_id + row_id ~ entities_id, value.var = "entities")
 
-  return(entities)
+  return(ent_dt)
 }
 
 
