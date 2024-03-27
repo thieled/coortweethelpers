@@ -71,7 +71,7 @@ preprocess_line_tweets <- function(tweets, tweets_cols = c(
   # Make "referenced_tweets" column a vector that can be processed by unnest_wider
   Referenced[, referenced_tweets := purrr::map(Referenced[, referenced_tweets], ~ unlist(.x))]
   # Unnest wider
-  Referenced <- tidytable::unnest_wider(Referenced, referenced_tweets, names_sep = "_", names_repair = "minimal")
+  Referenced <- tidytable::unnest_wider(Referenced, referenced_tweets, names_sep = "_", names_repair = "unique_quiet")
   Referenced <- Referenced[, 1:3, with = FALSE] # bit of a hack but works
 
   data.table::setnames(
@@ -367,4 +367,30 @@ extract_hashtags_dt <- function(entities) {
 
 
 
+#' Row-bind Preprocessed Data Tables
+#'
+#' Combine preprocessed data.tables stored in a nested list into a list of row-binded data.tables,
+#' deduplicating them by tweet_id.
+#'
+#' @param dt_list A nested list containing preprocessed data.tables.
+#' @return A list containing row-binded data.tables with deduplication by
+#' tweet_id for each type of data.
+#' @export
+rbind_preprocessed_dts <- function(dt_list) {
+  # Extract table names from the first list
+  table_names <- names(dt_list[[1]])
+
+  # Row-bind all tables for each table type
+  row_binded_tables <- lapply(table_names, function(name) {
+    tables <- lapply(dt_list, function(x) x[[name]])
+    dt <- data.table::rbindlist(tables, fill = TRUE)
+    dt <- unique(dt, by = "tweet_id")  # Deduplicate by tweet_id
+    return(dt)
+  })
+
+  # Name the elements of the resulting list with the table names
+  names(row_binded_tables) <- table_names
+
+  return(row_binded_tables)
+}
 

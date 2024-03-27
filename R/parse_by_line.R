@@ -171,3 +171,62 @@ load_users_json_line <- function(
 
   return(dt)
 }
+
+
+
+
+
+#' Load Tweets from Multiple JSON Files
+#'
+#' Load tweets from multiple JSON files located in the specified directory.
+#'
+#' @param data_dir Directory containing the JSON files.
+#' @param ... Additional arguments to pass to \code{\link{load_tweets_json_line}} function.
+#' @return A data.table containing tweets from all JSON files.
+#' @export
+load_tweets_multi_json_line <- function(data_dir, ...) {
+  if (!endsWith(data_dir, "/")) {
+    data_dir <- paste0(data_dir, "/")
+  }
+  json_files <- Sys.glob(paste0(data_dir, "*.json*"))
+
+  suppressWarnings(
+    result <- data.table::rbindlist(
+      pbapply::pblapply(json_files, function(file) {
+        load_tweets_json_line(file, ...)
+      }),
+      use.names = TRUE,
+      fill = TRUE)
+  )
+
+  return(result)
+}
+
+
+
+
+#' Load and Preprocess Tweets from Multiple JSON Files
+#'
+#' Load and preprocess tweets from multiple JSON files located in the specified directory.
+#'
+#' @param data_dir Directory containing the JSON files.
+#' @param ... Additional arguments to pass to \code{\link{load_tweets_json_line}} function.
+#' @return A list of data.tables containing preprocessed tweets from all JSON files.
+#' @export
+load_perprocess_tweets_multi_jsonl <- function(data_dir, ...) {
+  if (!endsWith(data_dir, "/")) {
+    data_dir <- paste0(data_dir, "/")
+  }
+  json_files <- Sys.glob(paste0(data_dir, "*.json*"))
+
+  suppressWarnings(
+    result_list <-  pbapply::pblapply(json_files, function(file) {
+      parsed <- load_tweets_json_line(file, ...)
+      preprocessed <- preprocess_line_tweets(parsed)
+    }
+    )
+  )
+  result <- rbind_preprocessed_dts(result_list)
+
+  return(result)
+}
