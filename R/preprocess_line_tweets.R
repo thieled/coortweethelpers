@@ -71,7 +71,9 @@ preprocess_line_tweets <- function(tweets, tweets_cols = c(
   # Make "referenced_tweets" column a vector that can be processed by unnest_wider
   Referenced[, referenced_tweets := purrr::map(Referenced[, referenced_tweets], ~ unlist(.x))]
   # Unnest wider
+  suppressMessages(
   Referenced <- tidytable::unnest_wider(Referenced, referenced_tweets, names_sep = "_", names_repair = "unique_quiet")
+  )
   Referenced <- Referenced[, 1:3, with = FALSE] # bit of a hack but works
 
   data.table::setnames(
