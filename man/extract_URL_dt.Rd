@@ -16,5 +16,8 @@ A data.table containing URLs shared in the tweets, along with related informatio
 This function extracts URLs shared in tweets from the entities data.table and organizes them into a separate data.table.
 }
 \details{
-This function evaluates if there are tweets with several URLs, resulting in a urls.url column. It then subsets the data into tweets containing one URL and tweets with several URLs. Column names starting with "url." are harmonized, and the prefix "urls." is removed. Empty observations are dropped, and a new column clear_url is created using data.table syntax. Domain names are extracted from the expanded_url column and stored in the domain column. The resulting data.table is indexed by tweet_id, domain, and expanded_url for efficient querying.
+This function evaluates if there are tweets with several URLs, resulting in a urls.url column. It then subsets the data into tweets
+containing one URL and tweets with several URLs. Column names starting with "url." are harmonized, and the prefix "urls." is removed.
+Empty observations are dropped, and a new column clear_url is created using data.table syntax. Domain names are extracted from the expanded_url column and stored in the domain column.
+The resulting data.table is indexed by tweet_id, domain, and expanded_url for efficient querying.
 }

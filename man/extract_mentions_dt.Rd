@@ -16,5 +16,7 @@ A data.table containing mentions extracted from the tweets, along with related i
 This function extracts mentions from tweets' entities data.table and organizes them into a separate data.table.
 }
 \details{
-This function evaluates if there are tweets with several mentions, resulting in a mentions.id column. It then subsets the data into tweets containing one mention and tweets with several mentions. Column names starting with "mentions" are harmonized, and the prefix "mentions." is removed. Empty observations are dropped, and the resulting data.table is indexed by tweet_id, username, and id for efficient querying.
+This function evaluates if there are tweets with several mentions, resulting in a mentions.id column. It then subsets the data into tweets containing
+one mention and tweets with several mentions. Column names starting with "mentions" are harmonized, and the prefix "mentions." is removed. Empty observations are dropped,
+and the resulting data.table is indexed by tweet_id, username, and id for efficient querying.
 }

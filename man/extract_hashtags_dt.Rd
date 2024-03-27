@@ -16,5 +16,7 @@ A data.table containing hashtags extracted from the tweets, along with related i
 This function extracts hashtags from tweets' entities data.table and organizes them into a separate data.table.
 }
 \details{
-This function evaluates if there are tweets with several hashtags, resulting in a hashtags.tag column. It then subsets the data into tweets containing one hashtag and tweets with several hashtags. Column names starting with "hashtags" are harmonized, and the prefix "hashtags" is removed. Empty observations are dropped, and the resulting data.table is indexed by tweet_id and tag for efficient querying.
+This function evaluates if there are tweets with several hashtags, resulting in a hashtags.tag column. It then subsets the data into tweets
+containing one hashtag and tweets with several hashtags. Column names starting with "hashtags" are harmonized, and the prefix "hashtags" is removed.
+Empty observations are dropped, and the resulting data.table is indexed by tweet_id and tag for efficient querying.
 }

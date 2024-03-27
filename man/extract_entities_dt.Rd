@@ -16,5 +16,6 @@ A data.table containing entities information extracted from Twitter data in wide
 This function extracts entities information from Twitter data and organizes it into a data.table in wide format.
 }
 \details{
-This function drops empty rows, subsets the data.table to tweet_id and entities columns, unnests the entities column into a longer format, and pivots the data into wide format. It creates a unique row identifier for each tweet_id - entities_id pair to ensure uniqueness in the resulting data.table.
+This function drops empty rows, subsets the data.table to tweet_id and entities columns, unnests the entities column into a longer format,
+and pivots the data into wide format. It creates a unique row identifier for each tweet_id - entities_id pair to ensure uniqueness in the resulting data.table.
 }

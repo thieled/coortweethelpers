@@ -122,7 +122,8 @@ preprocess_line_tweets <- function(tweets, tweets_cols = c(
 #'
 #' @param tweets A data.table containing Twitter data, including tweet_id and entities columns.
 #' @return A data.table containing entities information extracted from Twitter data in wide format.
-#' @details This function drops empty rows, subsets the data.table to tweet_id and entities columns, unnests the entities column into a longer format, and pivots the data into wide format. It creates a unique row identifier for each tweet_id - entities_id pair to ensure uniqueness in the resulting data.table.
+#' @details This function drops empty rows, subsets the data.table to tweet_id and entities columns, unnests the entities column into a longer format,
+#' and pivots the data into wide format. It creates a unique row identifier for each tweet_id - entities_id pair to ensure uniqueness in the resulting data.table.
 #'
 #' @import data.table
 #'
@@ -164,7 +165,10 @@ extract_entities_dt <- function(tweets) {
 #'
 #' @param entities A data.table containing entities information extracted from Twitter data, typically obtained using the extract_entities_dt function.
 #' @return A data.table containing URLs shared in the tweets, along with related information such as tweet_id, row_id, URL details, and domain names.
-#' @details This function evaluates if there are tweets with several URLs, resulting in a urls.url column. It then subsets the data into tweets containing one URL and tweets with several URLs. Column names starting with "url." are harmonized, and the prefix "urls." is removed. Empty observations are dropped, and a new column clear_url is created using data.table syntax. Domain names are extracted from the expanded_url column and stored in the domain column. The resulting data.table is indexed by tweet_id, domain, and expanded_url for efficient querying.
+#' @details This function evaluates if there are tweets with several URLs, resulting in a urls.url column. It then subsets the data into tweets
+#' containing one URL and tweets with several URLs. Column names starting with "url." are harmonized, and the prefix "urls." is removed.
+#' Empty observations are dropped, and a new column clear_url is created using data.table syntax. Domain names are extracted from the expanded_url column and stored in the domain column.
+#' The resulting data.table is indexed by tweet_id, domain, and expanded_url for efficient querying.
 #'
 #' @import data.table
 #'
@@ -250,7 +254,9 @@ extract_URL_dt <- function(entities){
 #'
 #' @param entities A data.table containing entities information extracted from Twitter data, typically obtained using the extract_entities_dt function.
 #' @return A data.table containing mentions extracted from the tweets, along with related information such as tweet_id, row_id, username, id, start, and end.
-#' @details This function evaluates if there are tweets with several mentions, resulting in a mentions.id column. It then subsets the data into tweets containing one mention and tweets with several mentions. Column names starting with "mentions" are harmonized, and the prefix "mentions." is removed. Empty observations are dropped, and the resulting data.table is indexed by tweet_id, username, and id for efficient querying.
+#' @details This function evaluates if there are tweets with several mentions, resulting in a mentions.id column. It then subsets the data into tweets containing
+#' one mention and tweets with several mentions. Column names starting with "mentions" are harmonized, and the prefix "mentions." is removed. Empty observations are dropped,
+#' and the resulting data.table is indexed by tweet_id, username, and id for efficient querying.
 #'
 #' @import data.table
 #'
@@ -313,7 +319,9 @@ extract_mentions_dt <- function(entities) {
 #'
 #' @param entities A data.table containing entities information extracted from Twitter data, typically obtained using the extract_entities_dt function.
 #' @return A data.table containing hashtags extracted from the tweets, along with related information such as tweet_id, row_id, tag, start, and end.
-#' @details This function evaluates if there are tweets with several hashtags, resulting in a hashtags.tag column. It then subsets the data into tweets containing one hashtag and tweets with several hashtags. Column names starting with "hashtags" are harmonized, and the prefix "hashtags" is removed. Empty observations are dropped, and the resulting data.table is indexed by tweet_id and tag for efficient querying.
+#' @details This function evaluates if there are tweets with several hashtags, resulting in a hashtags.tag column. It then subsets the data into tweets
+#' containing one hashtag and tweets with several hashtags. Column names starting with "hashtags" are harmonized, and the prefix "hashtags" is removed.
+#' Empty observations are dropped, and the resulting data.table is indexed by tweet_id and tag for efficient querying.
 #'
 #' @import data.table
 #'
