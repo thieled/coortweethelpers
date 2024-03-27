@@ -72,6 +72,8 @@ preprocess_line_tweets <- function(tweets, tweets_cols = c(
   Referenced[, referenced_tweets := purrr::map(Referenced[, referenced_tweets], ~ unlist(.x))]
   # Unnest wider
   Referenced <- tidytable::unnest_wider(Referenced, referenced_tweets, names_sep = "_", names_repair = "minimal")
+  Referenced <- Referenced[, 1:3, with = FALSE] # bit of a hack but works
+
   data.table::setnames(
     Referenced,
     c("tweet_id", "type", "referenced_tweet_id")
