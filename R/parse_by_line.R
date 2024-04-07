@@ -65,6 +65,31 @@ load_tweets_jsonl <- function(
                                 empty_object = empty_object,
                                 max_simplify_lvl = max_simplify_lvl)
 
+
+  # Check if parsed jsons are further nested into pages, if so, unlist
+  # To economize, inspect only the first 200 elements
+          determine_pagination <- function(lst) {
+            list_length <- sapply(utils::head(lst, 200), length)
+            list_names <- sapply(utils::head(lst, 200), names)
+
+            if (mean(list_length) < 25 && all(!is.null(list_names))) {
+              return(FALSE)
+            } else {
+              return(TRUE)
+            }
+          }
+
+          # Conditional unlist function
+          unlist_paged_list <- function(lst) {
+            if (determine_pagination(lst)) {
+              lst <- unlist(lst, recursive = FALSE)
+            }
+            return(lst)
+          }
+
+          # Apply these functions
+          jsonl <- unlist_paged_list(jsonl)
+
   # For data.table::rbindlist, 'simple' lists must be restructured into more nested lists..
   # TO DO: Find a way to skip this step
   jsonl <- purrr::map(jsonl, ~ purrr::modify(.x, ~ if (is.list(.x) && length(.x) > 1) list(.x) else .x))

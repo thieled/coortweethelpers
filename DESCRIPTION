@@ -18,4 +18,5 @@ Imports:
     RcppSimdJson,
     readr,
     stringi,
-    tidytable
+    tidytable,
+    utils
