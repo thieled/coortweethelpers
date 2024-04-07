@@ -2,20 +2,30 @@
 % Please edit documentation in R/parse_by_line.R
 \name{load_preprocess_tweets_jsonl_multi}
 \alias{load_preprocess_tweets_jsonl_multi}
-\title{Load and Preprocess Tweets from Multiple JSON Files}
+\title{This function loads tweets from JSONL files and preprocesses them.}
 \usage{
-load_preprocess_tweets_jsonl_multi(data_dir, save_dir = NULL, ...)
+load_preprocess_tweets_jsonl_multi(
+  data_dir = NULL,
+  file_paths = NULL,
+  save_dir = NULL,
+  bind = TRUE,
+  ...
+)
 }
 \arguments{
-\item{data_dir}{Directory containing the JSON files.}
+\item{data_dir}{A character string specifying the directory containing JSONL files. Defaults to \code{NULL}.}
 
-\item{save_dir}{Optional. Directory to save the pre-pocessed .rds files - one for each parsed .json.}
+\item{file_paths}{A character vector specifying the paths of JSONL files. Defaults to \code{NULL}.}
 
-\item{...}{Additional arguments to pass to \code{\link{load_tweets_jsonl}} function.}
+\item{save_dir}{A character string specifying the directory to save preprocessed data. Defaults to \code{NULL}.}
+
+\item{bind}{Logical. Should results be bound to one list of data tables or returned as list of lists? Default is TRUE.}
+
+\item{...}{Additional arguments to be passed to \code{\link[jsonlite]{fromJSON}} when loading JSONL files.}
 }
 \value{
-A list of data.tables containing preprocessed tweets from all JSON files.
+A list containing preprocessed tweet data.
 }
 \description{
-Load and preprocess tweets from multiple JSON files located in the specified directory.
+This function loads tweets from JSONL files and preprocesses them.
 }
