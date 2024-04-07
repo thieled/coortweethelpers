@@ -4,10 +4,12 @@
 \alias{load_preprocess_tweets_jsonl_multi}
 \title{Load and Preprocess Tweets from Multiple JSON Files}
 \usage{
-load_preprocess_tweets_jsonl_multi(data_dir, ...)
+load_preprocess_tweets_jsonl_multi(data_dir, save_dir = NULL, ...)
 }
 \arguments{
 \item{data_dir}{Directory containing the JSON files.}
+
+\item{save_dir}{Optional. Directory to save the pre-pocessed .rds files - one for each parsed .json.}
 
 \item{...}{Additional arguments to pass to \code{\link{load_tweets_jsonl}} function.}
 }

@@ -235,10 +235,13 @@ load_tweets_jsonl_multi <- function(data_dir, ...) {
 #' Load and preprocess tweets from multiple JSON files located in the specified directory.
 #'
 #' @param data_dir Directory containing the JSON files.
+#' @param save_dir Optional. Directory to save the pre-pocessed .rds files - one for each parsed .json.
 #' @param ... Additional arguments to pass to \code{\link{load_tweets_jsonl}} function.
 #' @return A list of data.tables containing preprocessed tweets from all JSON files.
 #' @export
-load_preprocess_tweets_jsonl_multi <- function(data_dir, ...) {
+load_preprocess_tweets_jsonl_multi <- function(data_dir,
+                                               save_dir = NULL,
+                                               ...) {
   if (!endsWith(data_dir, "/")) {
     data_dir <- paste0(data_dir, "/")
   }
@@ -248,6 +251,24 @@ load_preprocess_tweets_jsonl_multi <- function(data_dir, ...) {
     result_list <-  pbapply::pblapply(json_files, function(file) {
       parsed <- load_tweets_jsonl(file, ...)
       preprocessed <- preprocess_line_tweets(parsed)
+
+      # Store if save_dir provided
+      if(!is.null(save_dir)){
+
+        if (!dir.exists(save_dir)) {
+          stop(paste0("No such directory as ", save_dir))
+        }
+
+        if (!endsWith(save_dir, "/")) {
+          save_dir <- paste0(save_dir, "/")
+        }
+
+        filepath <- paste0(save_dir, tools::file_path_sans_ext(basename(file)), "_preproc.rds")
+
+        saveRDS(object = preprocessed, file = filepath)
+      }
+
+
     }
     )
   )
