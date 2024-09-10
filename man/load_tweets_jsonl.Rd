@@ -9,14 +9,15 @@ load_tweets_jsonl(
   num_threads = NULL,
   n_max = Inf,
   skip_empty_rows = TRUE,
-  query = "/data",
+  query = NULL,
   query_error_ok = TRUE,
   on_query_error = NULL,
   parse_error_ok = TRUE,
   on_parse_error = NULL,
   empty_array = NULL,
   empty_object = NULL,
-  max_simplify_lvl = 2L
+  max_simplify_lvl = 2L,
+  api_version = c("v1", "v2")
 )
 }
 \arguments{
@@ -44,12 +45,15 @@ load_tweets_jsonl(
 
 \item{max_simplify_lvl}{An integer specifying the maximum level of simplification. Default is 2L (vector).
 Other options from RcppSimdJson::fparse are data.frame (0L), matrix (1L), vector (2L) or list (3L).}
+
+\item{api_version}{A character value indicating whether data from Twitter API 'v1' or 'v2' should be parsed.}
 }
 \value{
 A data.table object containing the parsed and reshaped tweets.
 }
 \description{
-This function parses and reshapes .json and .jsonl data from the Twitter v1 and v2 APIs into a format that can be processed by the CooRTweet package.
+This function parses and reshapes .json and .jsonl data from the Twitter v1 and v2 APIs into a format that
+can be processed by the CooRTweet package.
 }
 \details{
 This function reads a .json or .jsonl file line by line to avoid potential errors with RcppSimdJson. It then processes the data into a format suitable for further analysis.

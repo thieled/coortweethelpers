@@ -1,6 +1,7 @@
 #' Load Tweets from JSON or JSONL File
 #'
-#' This function parses and reshapes .json and .jsonl data from the Twitter v1 and v2 APIs into a format that can be processed by the CooRTweet package.
+#' This function parses and reshapes .json and .jsonl data from the Twitter v1 and v2 APIs into a format that
+#' can be processed by the CooRTweet package.
 #'
 #' @param file_path A character string specifying the path to the .json or .jsonl file.
 #' @param num_threads An integer specifying the number of threads to be used for parsing. Default is NULL.
@@ -15,6 +16,7 @@
 #' @param empty_object A value to use for empty objects encountered during parsing. Default is NULL.
 #' @param max_simplify_lvl An integer specifying the maximum level of simplification. Default is 2L (vector).
 #' Other options from RcppSimdJson::fparse are data.frame (0L), matrix (1L), vector (2L) or list (3L).
+#' @param api_version A character value indicating whether data from Twitter API 'v1' or 'v2' should be parsed.
 #'
 #' @return A data.table object containing the parsed and reshaped tweets.
 #'
@@ -34,15 +36,26 @@ load_tweets_jsonl <- function(
     num_threads = NULL,
     n_max = Inf,
     skip_empty_rows = TRUE,
-    query = "/data",
+    query = NULL,
     query_error_ok = TRUE,
     on_query_error = NULL,
     parse_error_ok = TRUE,
     on_parse_error = NULL,
     empty_array = NULL,
     empty_object = NULL,
-    max_simplify_lvl = 2L
+    max_simplify_lvl = 2L,
+    api_version = c("v1", "v2")
 ) {
+
+  # Check if start_date is empty
+  if (length(api_version) > 1) {
+    stop("Please specify if 'api_version' is 'v1' or 'v2'.\n")
+  }
+
+  # If v2 API, query for /data in jsons
+  if(api_version == "v2"){
+    query = "/data"
+  }
 
   # Pick number of threads if not specified
   if(is.null(num_threads)){
@@ -66,29 +79,33 @@ load_tweets_jsonl <- function(
                                 max_simplify_lvl = max_simplify_lvl)
 
 
-  # Check if parsed jsons are further nested into pages, if so, unlist
+
+  # For v2: Check if parsed jsons are further nested into pages, if so, unlist
   # To economize, inspect only the first 200 elements
-          determine_pagination <- function(lst) {
-            list_length <- sapply(utils::head(lst, 200), length)
-            list_names <- sapply(utils::head(lst, 200), names)
+  if(api_version == "v2"){
 
-            if (mean(list_length) < 25 && all(!is.null(list_names))) {
-              return(FALSE)
-            } else {
-              return(TRUE)
-            }
-          }
+    determine_pagination <- function(lst) {
+      list_length <- sapply(utils::head(lst, 200), length)
+      list_names <- sapply(utils::head(lst, 200), names)
 
-          # Conditional unlist function
-          unlist_paged_list <- function(lst) {
-            if (determine_pagination(lst)) {
-              lst <- unlist(lst, recursive = FALSE)
-            }
-            return(lst)
-          }
+      if (mean(list_length) < 25 && all(!is.null(list_names))) {
+        return(FALSE)
+      } else {
+        return(TRUE)
+      }
+    }
 
-          # Apply these functions
-          jsonl <- unlist_paged_list(jsonl)
+    # Conditional unlist function
+    unlist_paged_list <- function(lst) {
+      if (determine_pagination(lst)) {
+        lst <- unlist(lst, recursive = FALSE)
+      }
+      return(lst)
+    }
+
+    # Apply these functions
+    jsonl <- unlist_paged_list(jsonl)
+  }
 
   # For data.table::rbindlist, 'simple' lists must be restructured into more nested lists..
   # TO DO: Find a way to skip this step
@@ -99,7 +116,11 @@ load_tweets_jsonl <- function(
                               fill = TRUE)
 
   # rename "id" column
-  data.table::setnames(dt, "id", "tweet_id")
+  if(api_version == "v2"){
+    data.table::setnames(dt, "id", "tweet_id")
+  }else{
+    data.table::setnames(dt, "id_str", "tweet_id")
+  }
 
   # deduplicate
   dt <- unique(dt, by = "tweet_id")
