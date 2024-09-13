@@ -27,4 +27,5 @@ Imports:
     utils,
     yyjsonr
 Remotes: 
-    github::nicolarighetti/CooRTweet
+    github::nicolarighetti/CooRTweet,
+    coolbutuseless/yyjsonr
