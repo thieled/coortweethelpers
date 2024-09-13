@@ -17,6 +17,7 @@
 #' @param max_simplify_lvl An integer specifying the maximum level of simplification. Default is 2L (vector).
 #' Other options from RcppSimdJson::fparse are data.frame (0L), matrix (1L), vector (2L) or list (3L).
 #' @param api_version A character value indicating whether data from Twitter API 'v1' or 'v2' should be parsed. Default is v2.
+#' @param parser A character indicating which json parser should be used. Default "simdjson"; otherwise "yyjson".
 #'
 #' @return A data.table object containing the parsed and reshaped tweets.
 #'
@@ -44,7 +45,8 @@ load_tweets_jsonl <- function(
     empty_array = NULL,
     empty_object = NULL,
     max_simplify_lvl = 2L,
-    api_version = "v2"
+    api_version = "v2",
+    parser = "simdjson"
 ) {
 
   # Check if api version is correctly provided
@@ -65,21 +67,30 @@ load_tweets_jsonl <- function(
   # Parse one json file line-by-line
   # Note: This is necessary if RcppSimdJson::fload/fparse breaks on the whole file due to corrupt lines
   # and (I think) for parsing .jsonl files.
-  jsonl <- RcppSimdJson::fparse(readr::read_lines(file = file_path,   # I use readr::read_lines, which has been found to be faster than readLines or vroom::vroom_lines
-                                                  num_threads = num_threads,
-                                                  n_max = n_max,
-                                                  skip_empty_rows = skip_empty_rows),
-                                query = query,
-                                query_error_ok = query_error_ok,
-                                on_query_error = on_query_error,
-                                parse_error_ok = parse_error_ok,
-                                on_parse_error = on_parse_error,
-                                empty_array = empty_array,
-                                empty_object = empty_object,
-                                max_simplify_lvl = max_simplify_lvl)
+  if(parser == "simdjson"){
 
+    jsonl <- RcppSimdJson::fparse(readr::read_lines(file = file_path,   # I use readr::read_lines, which has been found to be faster than readLines or vroom::vroom_lines
+                                                    num_threads = num_threads,
+                                                    n_max = n_max,
+                                                    skip_empty_rows = skip_empty_rows),
+                                  query = query,
+                                  query_error_ok = query_error_ok,
+                                  on_query_error = on_query_error,
+                                  parse_error_ok = parse_error_ok,
+                                  on_parse_error = on_parse_error,
+                                  empty_array = empty_array,
+                                  empty_object = empty_object,
+                                  max_simplify_lvl = max_simplify_lvl)
+  }else{
 
+    jsonlines <- readr::read_lines(file = file_path,
+                                   num_threads = num_threads,
+                                   n_max = n_max,
+                                   skip_empty_rows = skip_empty_rows)
 
+    jsonl <- lapply(jsonlines, function(x) magrittr::extract2(yyjsonr::read_json_str(x), "data"))
+
+  }
   # For v2: Check if parsed jsons are further nested into pages, if so, unlist
   # To economize, inspect only the first 200 elements
   if(api_version == "v2"){

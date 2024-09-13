@@ -17,7 +17,8 @@ load_tweets_jsonl(
   empty_array = NULL,
   empty_object = NULL,
   max_simplify_lvl = 2L,
-  api_version = "v2"
+  api_version = "v2",
+  parser = "simdjson"
 )
 }
 \arguments{
@@ -47,6 +48,8 @@ load_tweets_jsonl(
 Other options from RcppSimdJson::fparse are data.frame (0L), matrix (1L), vector (2L) or list (3L).}
 
 \item{api_version}{A character value indicating whether data from Twitter API 'v1' or 'v2' should be parsed. Default is v2.}
+
+\item{parser}{A character indicating which json parser should be used. Default "simdjson"; otherwise "yyjson".}
 }
 \value{
 A data.table object containing the parsed and reshaped tweets.

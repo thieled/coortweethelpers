@@ -14,6 +14,7 @@ Imports:
     CooRTweet (>= 2.0.2),
     data.table,
     lubridate,
+    magrittr,
     parallel,
     pbapply,
     purrr,
@@ -23,6 +24,7 @@ Imports:
     tictoc,
     tidytable,
     tools,
-    utils
+    utils,
+    yyjsonr
 Remotes: 
     github::nicolarighetti/CooRTweet
