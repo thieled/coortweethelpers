@@ -41,7 +41,7 @@ preprocess_line_tweets <- function(tweets,
     tweets <- data.table::as.data.table(tweets)
   }
 
-  # If v1 API, query for /data in jsons
+  # API v1
   if (api_version == "v1") {
 
     # Extract user id
@@ -79,13 +79,14 @@ preprocess_line_tweets <- function(tweets,
   if (api_version == "v2") {
     if ("public_metrics" %in% colnames(tweets)) {
       tweets[, public_metrics := purrr::map(tweets[, public_metrics], ~ unlist(.x))]
-      tweets <- tidytable::unnest_wider(tweets,
-                                        public_metrics,
-                                        names_sep = "_",
-                                        names_repair = "minimal")
-    } else {
-      tweets_cols <- tweets_cols[!startsWith(tweets_cols, "public_metrics")]
+      tweets_metrics <- tidytable::unnest_wider(tweets[, .(tweet_id, public_metrics)],
+                                                public_metrics,
+                                                names_sep = "_",
+                                                names_repair = "minimal")
+      tweets <- merge(tweets, tweets_metrics, by = "tweet_id", all.x = T)
     }
+  } else {
+    tweets_cols <- tweets_cols[!startsWith(tweets_cols, "public_metrics")]
   }
 
   # Construct the main data.table containing all tweets and their metadata
@@ -200,21 +201,22 @@ preprocess_line_tweets <- function(tweets,
 #'
 #' @export
 extract_entities_dt <- function(tweets) {
+
   # Store the original column name and standardize the id column to "id"
-  user_id <- original_id_col <- NULL
+  user_id <- original_id_col <- tmp_id <-  NULL
 
   if ("tweet_id" %in% colnames(tweets)) {
-    tweets[, id := tweet_id]
+    tweets[, tmp_id := tweet_id]
     original_id_col <- "tweet_id"
   } else if ("user_id" %in% colnames(tweets)) {
-    tweets[, id := user_id]
+    tweets[, tmp_id := user_id]
     original_id_col <- "user_id"
   } else {
     stop("Neither 'tweet_id' nor 'user_id' found in the data.")
   }
 
   # Drop empty rows, subset data.table to id and entities column
-  ent_dt <- tweets[purrr::map_lgl(tweets$entities, ~ !is.null(.x)), .(id, entities)]
+  ent_dt <- tweets[purrr::map_lgl(tweets$entities, ~ !is.null(.x)), .(tmp_id, entities)]
 
   # Make entities column a vector
   ent_dt[, entities := purrr::map(ent_dt[, entities], ~ unlist(.x))]
@@ -226,13 +228,13 @@ extract_entities_dt <- function(tweets) {
   data.table::setDT(ent_dt)
 
   # Create a unique row identifier for each id - entities_id pair
-  ent_dt[, row_id := seq_len(.N), by = .(id, entities_id)]
+  ent_dt[, row_id := seq_len(.N), by = .(tmp_id, entities_id)]
 
   # Pivot the data to wide format
-  ent_dt <- data.table::dcast(ent_dt, id + row_id ~ entities_id, value.var = "entities")
+  ent_dt <- data.table::dcast(ent_dt, tmp_id + row_id ~ entities_id, value.var = "entities")
 
   # Rename "id" column back to its original name
-  setnames(ent_dt, "id", original_id_col)
+  setnames(ent_dt, "tmp_id", original_id_col)
 
   return(ent_dt)
 }
@@ -583,6 +585,188 @@ extract_hashtags_dt <- function(entities,
   return(Hashtags)
 
 }
+
+
+#' Extract User URLs from Entities Data
+#'
+#' This function extracts URL information from a given entities data.table.
+#' It handles both API versions v1 and v2, standardizes the column names, and reshapes
+#' the data into a wide format. Optionally, it limits the number of URLs per ID.
+#'
+#' @param entities A data.table containing the entities data with URLs information.
+#' @param cutoff An integer specifying the maximum number of URLs to keep per ID. Defaults to 2.
+#' @param api_version A character string specifying the API version to use, either `"v1"` or `"v2"`. Defaults to `"v2"`.
+#'
+#' @return A data.table in wide format where each row represents a unique ID,
+#' and columns represent URLs (`url_url`, `url_display_url`, `url_expanded_url`, `url_domain`, etc.)
+#' up to the specified `cutoff` number.
+#'
+#' - In API v2, URLs are extracted from the `urls.` columns.
+#' - If `tweet_id` or `user_id` columns are found, they are standardized to `"id"`,
+#'   then renamed back to their original name after processing.
+#'
+#' @details The function processes URLs by unnesting long-form data, standardizing column names,
+#' limiting the number of URLs per ID based on the `cutoff`, extracting domain names, and pivoting
+#' the data into a wide format. It handles empty observations, and if more than `cutoff` URLs are
+#' found per ID, they are dropped.
+#'
+#' @export
+extract_user_URL_dt <- function(entities,
+                                cutoff = 2,
+                                api_version = "v2"){
+
+  url_domain <-  url_expanded_url <- user_id <- NULL
+
+  # Check if api version is correctly provided
+  if (length(api_version) > 1) {
+    stop("Please specify if 'api_version' is 'v1' or 'v2'.\n")
+  }
+
+  # Store the original column name and standardize the id column to "id"
+  original_id_col <- NULL
+  if ("tweet_id" %in% colnames(entities)) {
+    entities[, id := tweet_id]
+    original_id_col <- "tweet_id"
+  } else if ("user_id" %in% colnames(entities)) {
+    entities[, id := user_id]
+    original_id_col <- "user_id"
+  } else {
+    stop("Neither 'tweet_id' nor 'user_id' found in the data.")
+  }
+
+  if(api_version == "v2"){
+
+    # Select columns that start with "urls." or "url.", along with "id" and "row_id"
+    urls <- entities[, c("id", "row_id", grep("^urls\\.", names(entities), value = TRUE)), with = FALSE]
+    # Remove the prefix "urls."
+    cols <- grep("^urls\\.", names(urls), value = TRUE)
+    new_names <- gsub("^urls\\.", "url_", cols)
+    data.table::setnames(urls, cols, new_names)
+
+    if ("url.urls.url" %in% colnames(entities)) {
+
+      url <- entities[, c("id", "row_id", grep("^url\\.", names(entities), value = TRUE)), with = FALSE]
+      # Remove the prefix "urls."
+      cols <- grep("^url\\.", names(url), value = TRUE)
+      new_names <- gsub("^url\\.urls\\.", "url_", cols)
+      data.table::setnames(url, cols, new_names)
+
+      # Bind the two data.tables
+      URLs <- data.table::rbindlist(list(url, urls))
+    } else {
+      URLs <- urls
+    }
+
+    # Drop empty observations
+    URLs <- URLs[purrr::map_lgl(URLs$url_url, ~!is.na(.x))]
+
+    # Drop if more than 'cutoff' urls:
+    URLs <- URLs[row_id <= cutoff]
+
+    # extract domain names
+    URLs[, url_domain := gsub("https?://", "", url_expanded_url)]
+    URLs[, url_domain := stringi::stri_split_fixed(url_domain, "/", n = 2, simplify = TRUE)[, 1]]
+
+    URLs <- dcast(
+      URLs,
+      id ~ row_id,
+      value.var = c("url_url", "url_display_url", "url_expanded_url", "url_domain", "url_start", "url_end"),
+      fill = NA, # Fill empty cells with NA
+      sep = "_"
+    )
+
+    # Create the new column clear_url using data.table syntax
+    #  URLs[, expanded_url := ifelse(!is.na(unwound_url), unwound_url, expanded_url)]
+
+  }
+
+  data.table::setindex(URLs, id)
+
+  # Rename "id" column back to its original name
+  setnames(URLs, "id", original_id_col)
+
+
+  return(URLs)
+}
+
+
+
+
+#' Preprocess Line Users Data
+#'
+#' This function preprocesses user data from the Twitter API, handling both v1 and v2 versions.
+#' It ensures the necessary columns are present, processes public metrics, extracts URLs,
+#' and reformats the `created_at` timestamp.
+#'
+#' @param users A data.table containing user data from the Twitter API.
+#' @param api_version A character string specifying the API version to handle, either `"v1"` or `"v2"`. Defaults to `"v2"`.
+#'
+#' @return A data.table with the preprocessed user data, including public metrics and URLs if applicable.
+#' The `created_at` field is reformatted to a datetime object, and any extracted entities and URLs
+#' are merged back into the main dataset.
+#'
+#' @details
+#' - If the API version is `"v1"`, the function renames the `screen_name` column to `username`.
+#' - For API version `"v2"`, it unpacks the `public_metrics` and extracts URLs from the `entities` field.
+#' - The function checks for required columns (`username`, `user_id`) and stops if they are missing.
+#' - The `created_at` timestamp is reformatted based on the API version.
+#'
+#' @export
+preprocess_line_users <- function(users,
+                                  api_version = "v2") {
+
+  domain <- expanded_url <- created_at <- user_id <-  NULL
+
+  if (!inherits(users, "data.table")) {
+    users <- data.table::as.data.table(users)
+  }
+
+  if(api_version == "v1") data.table::setnames(users, "screen_name", "username")
+
+  required_cols <- c("username", "user_id")
+
+  for (cname in required_cols) {
+    if (!cname %in% colnames(users)) {
+      stop("Columns or their names are incorrect.
+            Ensure your data has the columns:
+            username, user_id")
+    }
+  }
+
+  # Unnest public metrics for v2
+  if (api_version == "v2") {
+    if ("public_metrics" %in% colnames(users)) {
+      users[, public_metrics := purrr::map(users[, public_metrics], ~ unlist(.x))]
+      user_metrics <- tidytable::unnest_wider(users[, .(user_id, public_metrics)],
+                                              public_metrics,
+                                              names_sep = "_",
+                                              names_repair = "minimal")
+      users <- merge(users, user_metrics, by = "user_id", all.x = T)
+    }
+
+    # Extract urls
+    entities <- extract_entities_dt(users)
+    urls <- extract_user_URL_dt(entities)
+    users <- merge(users, urls, by = "user_id", all.x = T)
+
+    # Drop entities column
+    users[, entities := NULL]
+
+    rm(entities, urls)
+
+  }
+
+  # Reformat datetime of created_at
+  if (api_version == "v1") {
+    users[, created_at := lubridate::as_datetime(as.POSIXct(created_at,
+                                                            format = "%a %b %d %H:%M:%S %z %Y", tz = "UTC"))]
+  } else {
+    users[, created_at := lubridate::as_datetime(created_at, tz = "UTC")]
+  }
+
+  return(users)
+}
+
 
 
 
