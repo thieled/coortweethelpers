@@ -16,7 +16,7 @@
 #' @param empty_object A value to use for empty objects encountered during parsing. Default is NULL.
 #' @param max_simplify_lvl An integer specifying the maximum level of simplification. Default is 2L (vector).
 #' Other options from RcppSimdJson::fparse are data.frame (0L), matrix (1L), vector (2L) or list (3L).
-#' @param api_version A character value indicating whether data from Twitter API 'v1' or 'v2' should be parsed.
+#' @param api_version A character value indicating whether data from Twitter API 'v1' or 'v2' should be parsed. Default is v2.
 #'
 #' @return A data.table object containing the parsed and reshaped tweets.
 #'
@@ -44,7 +44,7 @@ load_tweets_jsonl <- function(
     empty_array = NULL,
     empty_object = NULL,
     max_simplify_lvl = 2L,
-    api_version = c("v1", "v2")
+    api_version = "v2"
 ) {
 
   # Check if api version is correctly provided
@@ -132,36 +132,27 @@ load_tweets_jsonl <- function(
 
 
 
-
-#' Load Users from JSON or JSONL File
+#' Load Users from JSONL File
 #'
-#' This function parses and reshapes .json and .jsonl data containing user information into a format suitable for further analysis.
+#' This function loads user data from a JSONL (JSON Lines) file and extracts relevant fields using the RcppSimdJson package.
+#' It handles both v1 and v2 of the API by adjusting the query accordingly and flattens the resulting data.
 #'
-#' @param file_path A character string specifying the path to the .json or .jsonl file.
-#' @param num_threads An integer specifying the number of threads to be used for parsing. Default is NULL.
-#' @param n_max An integer specifying the maximum number of lines to read from the file. Default is Inf.
-#' @param skip_empty_rows A logical value indicating whether empty rows should be skipped. Default is TRUE.
-#' @param query A character string specifying the JSON path to extract user data from. Default is "/includes/users".
-#' @param query_error_ok A logical value indicating whether to continue parsing if a query error occurs. Default is TRUE.
-#' @param on_query_error A function to handle query errors if they occur. Default is NULL.
-#' @param parse_error_ok A logical value indicating whether to continue parsing if a parse error occurs. Default is TRUE.
-#' @param on_parse_error A function to handle parse errors if they occur. Default is NULL.
-#' @param empty_array A value to use for empty arrays encountered during parsing. Default is NULL.
-#' @param empty_object A value to use for empty objects encountered during parsing. Default is NULL.
-#' @param max_simplify_lvl An integer specifying the maximum level of simplification. Default is 2L (vector).
-#' Other options from RcppSimdJson::fparse are data.frame (0L), matrix (1L), vector (2L) or list (3L).
+#' @param file_path A string specifying the path to the JSONL file.
+#' @param num_threads An integer specifying the number of threads to use. If `NULL`, it detects the number of cores automatically.
+#' @param n_max Maximum number of lines to read from the file. Defaults to `Inf` (no limit).
+#' @param skip_empty_rows Logical, whether to skip empty rows when reading the file. Defaults to `TRUE`.
+#' @param query A character vector specifying the JSONPath to extract specific data. If `NULL`, it defaults based on the API version.
+#' @param query_error_ok Logical, whether to ignore errors during query processing. Defaults to `TRUE`.
+#' @param on_query_error A function or `NULL`, specifying the handler for query errors. Defaults to `NULL`.
+#' @param parse_error_ok Logical, whether to ignore errors during parsing. Defaults to `TRUE`.
+#' @param on_parse_error A function or `NULL`, specifying the handler for parsing errors. Defaults to `NULL`.
+#' @param empty_array A value or `NULL`, specifying what to return for empty arrays. Defaults to `NULL`.
+#' @param empty_object A value or `NULL`, specifying what to return for empty objects. Defaults to `NULL`.
+#' @param max_simplify_lvl An integer specifying the maximum simplification level for the parsed JSON. Defaults to `2L`.
+#' @param api_version A string specifying the API version, either `"v1"` or `"v2"`. Defaults to `"v2"`.
 #'
-#' @return A data.table object containing the parsed and reshaped user data.
-#'
-#' @details This function reads a .json or .jsonl file line by line to avoid potential errors with RcppSimdJson. It then processes the user data into a format suitable for further analysis.
-#'
-#' @examples
-#' \dontrun{
-#'   users <- load_users_json_line("tweets.json")
-#' }
-#'
-#' @references
-#' For more information on the CooRTweet package, see: https://github.com/nicolarighetti/CoRTweet
+#' @return A data.table containing user information from the JSONL file.
+#' The user ID column is renamed based on the API version, and duplicate rows are removed.
 #'
 #' @export
 load_users_jsonl <- function(
@@ -169,55 +160,69 @@ load_users_jsonl <- function(
     num_threads = NULL,
     n_max = Inf,
     skip_empty_rows = TRUE,
-    query = "/includes/users",
+    query = NULL,
     query_error_ok = TRUE,
     on_query_error = NULL,
     parse_error_ok = TRUE,
     on_parse_error = NULL,
     empty_array = NULL,
     empty_object = NULL,
-    max_simplify_lvl = 2L
+    max_simplify_lvl = 2L,
+    api_version = "v2"
 ) {
 
-  # Pick number of threads if not specified
+  # Check if API version is correctly provided
+  if (length(api_version) > 1) {
+    stop("Please specify if 'api_version' is 'v1' or 'v2'.\n")
+  }
+
+  # Set query based on API version
+  if(api_version == "v2"){
+    query = "/includes/users"
+  } else {
+    query = c("/user", "/retweeted_status/user", "/quoted_status/user")
+  }
+
+  # Detect number of threads if not specified
   if(is.null(num_threads)){
     num_threads <- parallel::detectCores()
   }
 
-  # Parse one json file line-by-line
-  # Note: This is necessary if RcppSimdJson::fload/fparse breaks on the whole file due to corrupt lines
-  # and (I think) for parsing .jsonl files.
-  jsonl <- RcppSimdJson::fparse(readr::read_lines(file = file_path,   # I use readr::read_lines, which has been found to be faster than readLines or vroom::vroom_lines
-                                                  num_threads = num_threads,
-                                                  n_max = n_max,
-                                                  skip_empty_rows = skip_empty_rows),
-                                query = query,
-                                query_error_ok = query_error_ok,
-                                on_query_error = on_query_error,
-                                parse_error_ok = parse_error_ok,
-                                on_parse_error = on_parse_error,
-                                empty_array = empty_array,
-                                empty_object = empty_object,
-                                max_simplify_lvl = max_simplify_lvl) |>
-    purrr::flatten() ## Remove upper layer of list
+  # Parse the JSONL file line-by-line
+  jsonl <- RcppSimdJson::fparse(
+    readr::read_lines(file = file_path,
+                      num_threads = num_threads,
+                      n_max = n_max,
+                      skip_empty_rows = skip_empty_rows),
+    query = query,
+    query_error_ok = query_error_ok,
+    on_query_error = on_query_error,
+    parse_error_ok = parse_error_ok,
+    on_parse_error = on_parse_error,
+    empty_array = empty_array,
+    empty_object = empty_object,
+    max_simplify_lvl = max_simplify_lvl
+  ) |>
+    purrr::flatten()  # Flatten the upper layer of the list
 
-  # For data.table::rbindlist, 'simple' lists must be restructured into more nested lists..
-  # TO DO: Find a way to skip this step
+  # Restructure simple lists into more nested lists
   jsonl <- purrr::map(jsonl, ~ purrr::modify(.x, ~ if (is.list(.x) && length(.x) > 1) list(.x) else .x))
 
-  dt <- data.table::rbindlist(jsonl,
-                              use.names = TRUE,
-                              fill = TRUE)
+  # Combine into a data.table
+  dt <- data.table::rbindlist(jsonl, use.names = TRUE, fill = TRUE)
 
-  # rename "id" column
-  data.table::setnames(dt, "id", "user_id")
+  # Rename "id" column based on API version
+  if(api_version == "v2") {
+    data.table::setnames(dt, "id", "user_id")
+  } else {
+    data.table::setnames(dt, "id_str", "user_id")
+  }
 
-  # deduplicate
+  # Remove duplicate users by user_id
   dt <- unique(dt, by = "user_id")
 
   return(dt)
 }
-
 
 
 

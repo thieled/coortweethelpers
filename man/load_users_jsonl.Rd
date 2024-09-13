@@ -2,64 +2,56 @@
 % Please edit documentation in R/parse_by_line.R
 \name{load_users_jsonl}
 \alias{load_users_jsonl}
-\title{Load Users from JSON or JSONL File}
+\title{Load Users from JSONL File}
 \usage{
 load_users_jsonl(
   file_path,
   num_threads = NULL,
   n_max = Inf,
   skip_empty_rows = TRUE,
-  query = "/includes/users",
+  query = NULL,
   query_error_ok = TRUE,
   on_query_error = NULL,
   parse_error_ok = TRUE,
   on_parse_error = NULL,
   empty_array = NULL,
   empty_object = NULL,
-  max_simplify_lvl = 2L
+  max_simplify_lvl = 2L,
+  api_version = "v2"
 )
 }
 \arguments{
-\item{file_path}{A character string specifying the path to the .json or .jsonl file.}
+\item{file_path}{A string specifying the path to the JSONL file.}
 
-\item{num_threads}{An integer specifying the number of threads to be used for parsing. Default is NULL.}
+\item{num_threads}{An integer specifying the number of threads to use. If \code{NULL}, it detects the number of cores automatically.}
 
-\item{n_max}{An integer specifying the maximum number of lines to read from the file. Default is Inf.}
+\item{n_max}{Maximum number of lines to read from the file. Defaults to \code{Inf} (no limit).}
 
-\item{skip_empty_rows}{A logical value indicating whether empty rows should be skipped. Default is TRUE.}
+\item{skip_empty_rows}{Logical, whether to skip empty rows when reading the file. Defaults to \code{TRUE}.}
 
-\item{query}{A character string specifying the JSON path to extract user data from. Default is "/includes/users".}
+\item{query}{A character vector specifying the JSONPath to extract specific data. If \code{NULL}, it defaults based on the API version.}
 
-\item{query_error_ok}{A logical value indicating whether to continue parsing if a query error occurs. Default is TRUE.}
+\item{query_error_ok}{Logical, whether to ignore errors during query processing. Defaults to \code{TRUE}.}
 
-\item{on_query_error}{A function to handle query errors if they occur. Default is NULL.}
+\item{on_query_error}{A function or \code{NULL}, specifying the handler for query errors. Defaults to \code{NULL}.}
 
-\item{parse_error_ok}{A logical value indicating whether to continue parsing if a parse error occurs. Default is TRUE.}
+\item{parse_error_ok}{Logical, whether to ignore errors during parsing. Defaults to \code{TRUE}.}
 
-\item{on_parse_error}{A function to handle parse errors if they occur. Default is NULL.}
+\item{on_parse_error}{A function or \code{NULL}, specifying the handler for parsing errors. Defaults to \code{NULL}.}
 
-\item{empty_array}{A value to use for empty arrays encountered during parsing. Default is NULL.}
+\item{empty_array}{A value or \code{NULL}, specifying what to return for empty arrays. Defaults to \code{NULL}.}
 
-\item{empty_object}{A value to use for empty objects encountered during parsing. Default is NULL.}
+\item{empty_object}{A value or \code{NULL}, specifying what to return for empty objects. Defaults to \code{NULL}.}
 
-\item{max_simplify_lvl}{An integer specifying the maximum level of simplification. Default is 2L (vector).
-Other options from RcppSimdJson::fparse are data.frame (0L), matrix (1L), vector (2L) or list (3L).}
+\item{max_simplify_lvl}{An integer specifying the maximum simplification level for the parsed JSON. Defaults to \code{2L}.}
+
+\item{api_version}{A string specifying the API version, either \code{"v1"} or \code{"v2"}. Defaults to \code{"v2"}.}
 }
 \value{
-A data.table object containing the parsed and reshaped user data.
+A data.table containing user information from the JSONL file.
+The user ID column is renamed based on the API version, and duplicate rows are removed.
 }
 \description{
-This function parses and reshapes .json and .jsonl data containing user information into a format suitable for further analysis.
-}
-\details{
-This function reads a .json or .jsonl file line by line to avoid potential errors with RcppSimdJson. It then processes the user data into a format suitable for further analysis.
-}
-\examples{
-\dontrun{
-  users <- load_users_json_line("tweets.json")
-}
-
-}
-\references{
-For more information on the CooRTweet package, see: https://github.com/nicolarighetti/CoRTweet
+This function loads user data from a JSONL (JSON Lines) file and extracts relevant fields using the RcppSimdJson package.
+It handles both v1 and v2 of the API by adjusting the query accordingly and flattens the resulting data.
 }

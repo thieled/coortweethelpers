@@ -17,7 +17,7 @@ load_tweets_jsonl(
   empty_array = NULL,
   empty_object = NULL,
   max_simplify_lvl = 2L,
-  api_version = c("v1", "v2")
+  api_version = "v2"
 )
 }
 \arguments{
@@ -46,7 +46,7 @@ load_tweets_jsonl(
 \item{max_simplify_lvl}{An integer specifying the maximum level of simplification. Default is 2L (vector).
 Other options from RcppSimdJson::fparse are data.frame (0L), matrix (1L), vector (2L) or list (3L).}
 
-\item{api_version}{A character value indicating whether data from Twitter API 'v1' or 'v2' should be parsed.}
+\item{api_version}{A character value indicating whether data from Twitter API 'v1' or 'v2' should be parsed. Default is v2.}
 }
 \value{
 A data.table object containing the parsed and reshaped tweets.
