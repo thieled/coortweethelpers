@@ -88,7 +88,12 @@ load_tweets_jsonl <- function(
                                    n_max = n_max,
                                    skip_empty_rows = skip_empty_rows)
 
-    jsonl <- lapply(jsonlines, function(x) magrittr::extract2(yyjsonr::read_json_str(x), "data"))
+    if(api_version == "v2"){
+      jsonl <- lapply(jsonlines, function(x) magrittr::extract2(yyjsonr::read_json_str(x), "data"))
+    }else{
+      jsonl <- lapply(jsonlines, function(x) yyjsonr::read_json_str(x))
+    }
+
 
   }
   # For v2: Check if parsed jsons are further nested into pages, if so, unlist
