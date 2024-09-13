@@ -57,6 +57,7 @@ load_users_jsonl_multi <- function(data_dir, ...) {
 #' @param file_paths A character vector specifying the paths of JSONL files. Defaults to \code{NULL}.
 #' @param save_dir A character string specifying the directory to save preprocessed data. Defaults to \code{NULL}.
 #' @param bind Logical. Should results be bound to one list of data tables or returned as list of lists? Default is TRUE.
+#' @param api_version A character vector specifying the API version. Default is v2.
 #' @param ... Additional arguments to be passed to \code{\link[jsonlite]{fromJSON}} when loading JSONL files.
 #'
 #' @return A list containing preprocessed tweet data.
@@ -66,42 +67,38 @@ load_preprocess_tweets_jsonl_multi <- function(data_dir = NULL,
                                                file_paths = NULL,
                                                save_dir = NULL,
                                                bind = TRUE,
+                                               api_version = "v2",
                                                ...) {
 
   if(!is.null(data_dir)){
 
-    if (!endsWith(data_dir, "/")) {
-      data_dir <- paste0(data_dir, "/")
-    }
-
     if(!dir.exists(data_dir)){
       stop(paste0("Please provide a valid path 'data_dir'."))
     }
-
-    json_files <- Sys.glob(paste0(data_dir, "*.json*"))
-
+    json_files <- list.files(path = data_dir, pattern = "\\.(json|jsonl)$", full.names = TRUE)
   }else{
-
     if(is.null(file_paths)){
       stop(paste0("Please provide either 'data_dir' or 'file_paths'."))
     }
-
     if(!all(file.exists(file_paths))){
       warning(paste0("The following files do not exist and will be skipped:",
                      file_paths[!file.exists(file_paths)]
       ))
       json_files <- file_paths[file.exists(file_paths)]
     }else{
-
       json_files <- file_paths
-
     }
+  }
+
+  # Check if API version is correctly provided
+  if (length(api_version) > 1) {
+    stop("Please specify if 'api_version' is 'v1' or 'v2'.\n")
   }
 
   suppressWarnings(
     result_list <-  pbapply::pblapply(json_files, function(file) {
-      parsed <- load_tweets_jsonl(file, ...)
-      preprocessed <- preprocess_line_tweets(parsed)
+      parsed <- load_tweets_jsonl(file, api_version = api_version, ...)
+      preprocessed <- preprocess_line_tweets(parsed, api_version = api_version)
 
       # Store if save_dir provided
       if(!is.null(save_dir)){
