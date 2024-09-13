@@ -191,7 +191,7 @@ preprocess_line_tweets <- function(tweets,
 #'
 #' This function extracts entities information from Twitter data and organizes it into a data.table in wide format.
 #'
-#' @param tweets A data.table containing Twitter data, including tweet_id and entities columns.
+#' @param tweets A data.table containing Twitter data, including tweet_id or user_id and entities columns.
 #' @return A data.table containing entities information extracted from Twitter data in wide format.
 #' @details This function drops empty rows, subsets the data.table to tweet_id and entities columns, unnests the entities column into a longer format,
 #' and pivots the data into wide format. It creates a unique row identifier for each tweet_id - entities_id pair to ensure uniqueness in the resulting data.table.
@@ -200,30 +200,42 @@ preprocess_line_tweets <- function(tweets,
 #'
 #' @export
 extract_entities_dt <- function(tweets) {
-  ## For some reason, CooRTweet:::unnest_wider does not work properly here - different solution
-  # Note: There is probably a more efficient way to achieve this
+  # Store the original column name and standardize the id column to "id"
+  user_id <- original_id_col <- NULL
 
-  # Drop empty rows, subset data.table to tweet_id and entities column
-  ent_dt <- tweets[purrr::map_lgl(tweets$entities, ~!is.null(.x)), .(tweet_id, entities)]
+  if ("tweet_id" %in% colnames(tweets)) {
+    tweets[, id := tweet_id]
+    original_id_col <- "tweet_id"
+  } else if ("user_id" %in% colnames(tweets)) {
+    tweets[, id := user_id]
+    original_id_col <- "user_id"
+  } else {
+    stop("Neither 'tweet_id' nor 'user_id' found in the data.")
+  }
 
-  # make entities column a vector
+  # Drop empty rows, subset data.table to id and entities column
+  ent_dt <- tweets[purrr::map_lgl(tweets$entities, ~ !is.null(.x)), .(id, entities)]
+
+  # Make entities column a vector
   ent_dt[, entities := purrr::map(ent_dt[, entities], ~ unlist(.x))]
 
-  # unnest into longer format
+  # Unnest into longer format
   ent_dt <- tidytable::unnest_longer(ent_dt, entities, names_repair = "minimal")
 
   # Turn into data.table
   data.table::setDT(ent_dt)
 
-  # Create a unique row identifier for each tweet_id - entities_id pair
-  ent_dt[, row_id := seq_len(.N), by = .(tweet_id, entities_id)]
+  # Create a unique row identifier for each id - entities_id pair
+  ent_dt[, row_id := seq_len(.N), by = .(id, entities_id)]
 
   # Pivot the data to wide format
-  ent_dt <- data.table::dcast(ent_dt, tweet_id + row_id ~ entities_id, value.var = "entities")
+  ent_dt <- data.table::dcast(ent_dt, id + row_id ~ entities_id, value.var = "entities")
+
+  # Rename "id" column back to its original name
+  setnames(ent_dt, "id", original_id_col)
 
   return(ent_dt)
 }
-
 
 
 

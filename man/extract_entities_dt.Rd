@@ -7,7 +7,7 @@
 extract_entities_dt(tweets)
 }
 \arguments{
-\item{tweets}{A data.table containing Twitter data, including tweet_id and entities columns.}
+\item{tweets}{A data.table containing Twitter data, including tweet_id or user_id and entities columns.}
 }
 \value{
 A data.table containing entities information extracted from Twitter data in wide format.
