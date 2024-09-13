@@ -47,7 +47,7 @@ load_tweets_jsonl <- function(
     api_version = c("v1", "v2")
 ) {
 
-  # Check if start_date is empty
+  # Check if api version is correctly provided
   if (length(api_version) > 1) {
     stop("Please specify if 'api_version' is 'v1' or 'v2'.\n")
   }

@@ -8,20 +8,25 @@ preprocess_line_tweets(
   tweets,
   tweets_cols = c("possibly_sensitive", "lang", "text", "public_metrics_retweet_count",
     "public_metrics_reply_count", "public_metrics_like_count",
-    "public_metrics_quote_count")
+    "public_metrics_quote_count"),
+  api_version = "v2"
 )
 }
 \arguments{
-\item{tweets}{A data.table containing tweet data.}
+\item{tweets}{A data.table of tweet data.}
 
-\item{tweets_cols}{A character vector specifying the columns to keep in the processed data. Default columns include possibly_sensitive, lang, text, and various public metrics related to retweets, replies, likes, and quotes.}
+\item{tweets_cols}{A character vector of column names to retain in the tweet data.
+Default columns are provided, including possibly_sensitive, lang, and several public metrics.}
+
+\item{api_version}{A character string specifying the API version. Must be either \code{"v1"} or \code{"v2"}.}
 }
 \value{
-A list containing data.tables for tweets, referenced tweets, URLs, mentions, and hashtags.
+A list containing processed tweet data (tweets), referenced tweets (referenced),
+URLs (urls), mentions (mentions), and hashtags (hashtags).
 }
 \description{
-This function preprocesses tweet data, extracting relevant information such as entities, URLs, mentions, and hashtags, and organizes them into separate data.tables.
-}
-\details{
-This function preprocesses tweet data, ensuring that required columns such as entities, tweet_id, created_at, author_id, conversation_id, and referenced_tweets are present. It then constructs the main data.table containing all tweets and their metadata. Public metrics are handled separately, and datetime columns are reformatted. Referenced tweets, entities, URLs, mentions, and hashtags are extracted and organized into separate data.tables for easy analysis.
+This function preprocesses tweet data, handling both v1 and v2 of the API.
+It extracts and reshapes various tweet entities such as user information,
+public metrics, URLs, mentions, and hashtags. It also adjusts the date format
+and constructs the referenced tweets.
 }

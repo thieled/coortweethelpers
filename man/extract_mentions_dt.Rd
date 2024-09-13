@@ -4,10 +4,12 @@
 \alias{extract_mentions_dt}
 \title{Extract Mentions Data.Table from Entities Data.Table}
 \usage{
-extract_mentions_dt(entities)
+extract_mentions_dt(entities, api_version = "v2")
 }
 \arguments{
 \item{entities}{A data.table containing entities information extracted from Twitter data, typically obtained using the extract_entities_dt function.}
+
+\item{api_version}{A character vector specifying the API version. Default is v2.}
 }
 \value{
 A data.table containing mentions extracted from the tweets, along with related information such as tweet_id, row_id, username, id, start, and end.
