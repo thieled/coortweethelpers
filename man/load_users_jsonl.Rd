@@ -17,7 +17,8 @@ load_users_jsonl(
   empty_array = NULL,
   empty_object = NULL,
   max_simplify_lvl = 2L,
-  api_version = "v2"
+  api_version = "v2",
+  parser = "simdjson"
 )
 }
 \arguments{
@@ -46,6 +47,8 @@ load_users_jsonl(
 \item{max_simplify_lvl}{An integer specifying the maximum simplification level for the parsed JSON. Defaults to \code{2L}.}
 
 \item{api_version}{A string specifying the API version, either \code{"v1"} or \code{"v2"}. Defaults to \code{"v2"}.}
+
+\item{parser}{A character indicating which json parser should be used. Default "simdjson"; otherwise "yyjson".}
 }
 \value{
 A data.table containing user information from the JSONL file.

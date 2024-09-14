@@ -166,6 +166,7 @@ load_tweets_jsonl <- function(
 #' @param empty_object A value or `NULL`, specifying what to return for empty objects. Defaults to `NULL`.
 #' @param max_simplify_lvl An integer specifying the maximum simplification level for the parsed JSON. Defaults to `2L`.
 #' @param api_version A string specifying the API version, either `"v1"` or `"v2"`. Defaults to `"v2"`.
+#' @param parser A character indicating which json parser should be used. Default "simdjson"; otherwise "yyjson".
 #'
 #' @return A data.table containing user information from the JSONL file.
 #' The user ID column is renamed based on the API version, and duplicate rows are removed.
@@ -184,7 +185,8 @@ load_users_jsonl <- function(
     empty_array = NULL,
     empty_object = NULL,
     max_simplify_lvl = 2L,
-    api_version = "v2"
+    api_version = "v2",
+    parser = "simdjson"
 ) {
 
   # Check if API version is correctly provided
@@ -204,22 +206,43 @@ load_users_jsonl <- function(
     num_threads <- parallel::detectCores()
   }
 
-  # Parse the JSONL file line-by-line
-  jsonl <- RcppSimdJson::fparse(
-    readr::read_lines(file = file_path,
-                      num_threads = num_threads,
-                      n_max = n_max,
-                      skip_empty_rows = skip_empty_rows),
-    query = query,
-    query_error_ok = query_error_ok,
-    on_query_error = on_query_error,
-    parse_error_ok = parse_error_ok,
-    on_parse_error = on_parse_error,
-    empty_array = empty_array,
-    empty_object = empty_object,
-    max_simplify_lvl = max_simplify_lvl
-  ) |>
-    purrr::flatten()  # Flatten the upper layer of the list
+  if(parser == "simdjson"){
+    # Parse the JSONL file line-by-line
+    jsonl <- RcppSimdJson::fparse(
+      readr::read_lines(file = file_path,
+                        num_threads = num_threads,
+                        n_max = n_max,
+                        skip_empty_rows = skip_empty_rows),
+      query = query,
+      query_error_ok = query_error_ok,
+      on_query_error = on_query_error,
+      parse_error_ok = parse_error_ok,
+      on_parse_error = on_parse_error,
+      empty_array = empty_array,
+      empty_object = empty_object,
+      max_simplify_lvl = max_simplify_lvl
+    ) |>
+      purrr::flatten()  # Flatten the upper layer of the list
+
+  }else{ ## yyjsonr implementation
+
+    jsonlines <- readr::read_lines(file = file_path,
+                                   num_threads = num_threads,
+                                   n_max = n_max,
+                                   skip_empty_rows = skip_empty_rows)
+
+    if(api_version == "v2"){
+      jsonl <- lapply(jsonlines, function(x) yyjsonr::read_json_str(x))
+      jsonl <-  lapply(jsonl, function(x) x[["includes"]][["users"]])
+    }else{
+      jsonl <- lapply(jsonlines, function(x) yyjsonr::read_json_str(x))
+      jsonl <-  c(
+        lapply(jsonl, function(x) x[["user"]]),
+        lapply(jsonl, function(x) x[["retweeted_status"]][["user"]]),
+        lapply(jsonl, function(x) x[["quoted_status"]][["user"]])
+      )
+    }
+  }
 
   # Restructure simple lists into more nested lists
   jsonl <- purrr::map(jsonl, ~ purrr::modify(.x, ~ if (is.list(.x) && length(.x) > 1) list(.x) else .x))
