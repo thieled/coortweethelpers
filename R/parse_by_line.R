@@ -232,8 +232,12 @@ load_users_jsonl <- function(
                                    skip_empty_rows = skip_empty_rows)
 
     if(api_version == "v2"){
-      jsonl <- lapply(jsonlines, function(x) yyjsonr::read_json_str(x))
-      jsonl <-  lapply(jsonl, function(x) x[["includes"]][["users"]])
+
+      jsonl <- lapply(jsonlines, function(x) yyjsonr::read_json_str(x, opts = yyjsonr::opts_read_json(obj_of_arrs_to_df = F,
+                                                                                                      arr_of_objs_to_df = F)))
+      jsonl <-  lapply(jsonl, function(x) x[["includes"]][["users"]]) |>
+                   purrr::flatten()
+
     }else{
       jsonl <- lapply(jsonlines, function(x) yyjsonr::read_json_str(x))
       jsonl <-  c(
